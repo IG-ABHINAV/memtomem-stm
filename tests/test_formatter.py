@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 from unittest.mock import MagicMock
 from uuid import uuid4
@@ -353,6 +353,21 @@ class TestFormatterInjection:
 
         assert "**auth.md**" in output
         assert "**/auth.md**" not in output
+
+    @pytest.mark.parametrize(
+        "source_file, expected",
+        [
+            (PurePosixPath("/notes/2026-q1/auth.md"), "2026-q1/auth.md"),
+            (PurePosixPath("/auth.md"), "auth.md"),
+            (PurePosixPath("notes/m1.md"), "notes/m1.md"),
+            (PurePosixPath("/a/b/c/d.md"), "c/d.md"),
+            (PurePosixPath("/"), "/"),
+            (PureWindowsPath(r"C:\notes\a\b.md"), "a/b.md"),
+            (PureWindowsPath("C:\\"), "C:\\"),
+        ],
+    )
+    def test_format_source(self, source_file, expected):
+        assert SurfacingFormatter._format_source(source_file) == expected
 
     def test_default_namespace_none_renders_default_badge(self):
         fmt = SurfacingFormatter(SurfacingConfig(default_namespace=None))
